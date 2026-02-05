@@ -99,7 +99,6 @@ const AdminDashboard = () => {
   const toastChakra = useToast();
   const history = useHistory();
 
-  // Check admin authentication on component mount
   useEffect(() => {
     const checkAdminAuth = () => {
       const adminInfo = localStorage.getItem('adminInfo');
@@ -115,7 +114,6 @@ const AdminDashboard = () => {
           history.push('/admin');
           return;
         }
-        // Token exists, proceed to load data
         setCheckingAuth(false);
       } catch (e) {
         localStorage.removeItem('adminInfo');
@@ -146,7 +144,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Only load data when not checking auth
   useEffect(() => {
     if (!checkingAuth) {
       const loadData = async () => {

@@ -32,7 +32,6 @@ const AdminLogin = () => {
   const handleClick = () => setShow(!show);
   const handleRegisterClick = () => setShowRegister(!showRegister);
 
-  // Check if admin is already logged in
   useEffect(() => {
     const checkAdminAuth = () => {
       const adminInfo = localStorage.getItem('adminInfo');
