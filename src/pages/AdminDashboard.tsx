@@ -93,11 +93,38 @@ const AdminDashboard = () => {
   const [loadingStats, setLoadingStats] = useState(true);
   const [selectedUserForChat, setSelectedUserForChat] = useState<User | null>(null);
   const [showAdminChat, setShowAdminChat] = useState(false);
-
   const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const toastChakra = useToast();
   const history = useHistory();
+
+  // Check admin authentication on component mount
+  useEffect(() => {
+    const checkAdminAuth = () => {
+      const adminInfo = localStorage.getItem('adminInfo');
+      if (!adminInfo) {
+        history.push('/admin');
+        return;
+      }
+      
+      try {
+        const parsed = JSON.parse(adminInfo);
+        if (!parsed.token) {
+          localStorage.removeItem('adminInfo');
+          history.push('/admin');
+          return;
+        }
+        // Token exists, proceed to load data
+        setCheckingAuth(false);
+      } catch (e) {
+        localStorage.removeItem('adminInfo');
+        history.push('/admin');
+      }
+    };
+
+    checkAdminAuth();
+  }, [history]);
 
   const fetchDashboardData = async () => {
     try {
@@ -118,6 +145,24 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+
+  // Only load data when not checking auth
+  useEffect(() => {
+    if (!checkingAuth) {
+      const loadData = async () => {
+        setLoading(true);
+        await fetchDashboardData();
+        
+        setLoadingStats(true);
+        const msgCount = await fetchTotalMessagesCount();
+        setMessagesCount(msgCount);
+        setLoadingStats(false);
+        setLoading(false);
+      };
+      
+      loadData();
+    }
+  }, [checkingAuth]);
 
   const fetchTotalMessagesCount = async (): Promise<number> => {
     try {

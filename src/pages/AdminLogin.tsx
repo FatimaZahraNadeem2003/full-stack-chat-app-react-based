@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Button, 
   FormControl, 
@@ -25,11 +25,44 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const toast = useToast();
   const history = useHistory();
 
   const handleClick = () => setShow(!show);
   const handleRegisterClick = () => setShowRegister(!showRegister);
+
+  // Check if admin is already logged in
+  useEffect(() => {
+    const checkAdminAuth = () => {
+      const adminInfo = localStorage.getItem('adminInfo');
+      if (adminInfo) {
+        try {
+          const parsed = JSON.parse(adminInfo);
+          if (parsed.token) {
+            history.push('/admin/dashboard');
+            return;
+          }
+        } catch (e) {
+          localStorage.removeItem('adminInfo');
+        }
+      }
+      setCheckingAuth(false);
+    };
+
+    checkAdminAuth();
+  }, [history]);
+
+  if (checkingAuth) {
+    return (
+      <VStack spacing='5px' color='black' maxWidth="400px" margin="auto" mt={20}>
+        <Text fontSize="2xl" fontWeight="bold" color="teal.600" mb={6}>
+          Admin Panel
+        </Text>
+        <Text>Loading...</Text>
+      </VStack>
+    );
+  }
 
   const submitHandler = async () => {
     setLoading(true);
