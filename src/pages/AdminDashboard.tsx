@@ -325,9 +325,9 @@ const AdminDashboard = () => {
           Admin Dashboard
         </Heading>
         <Flex gap={{ base: 2, md: 3 }} wrap="wrap" justify="center">
-          <Button colorScheme="teal" onClick={() => setShowAdminChat(true)}>
+          {/* <Button colorScheme="teal" onClick={() => setShowAdminChat(true)}>
             New Chat
-          </Button>
+          </Button> */}
           <Button colorScheme="red" variant="outline" onClick={handleLogout}>
             Logout
           </Button>

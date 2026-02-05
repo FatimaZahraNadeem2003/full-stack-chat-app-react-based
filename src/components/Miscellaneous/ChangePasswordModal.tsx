@@ -106,7 +106,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ user, childre
 
   return (
     <>
-      {children ? (
+      {/* {children ? (
         <span onClick={onOpen}>{children}</span>
       ) : (
         <Button 
@@ -117,7 +117,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ user, childre
         >
           Change Password
         </Button>
-      )}
+      )} */}
 
       <Modal size='md' isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
