@@ -153,7 +153,7 @@ const Login: React.FC = () => {
 
         <FormControl id="email" isRequired>
           <FormLabel fontWeight="600">
-            <Icon as={FaEnvelope} mr={2} color="purple.500" />
+            <Icon as={FaEnvelope as any} mr={2} color="purple.500" />
             Email Address
           </FormLabel>
           <Input
@@ -169,7 +169,7 @@ const Login: React.FC = () => {
 
         <FormControl id="password" isRequired>
           <FormLabel fontWeight="600">
-            <Icon as={FaLock} mr={2} color="purple.500" />
+            <Icon as={FaLock as any} mr={2} color="purple.500" />
             Password
           </FormLabel>
 
@@ -189,7 +189,7 @@ const Login: React.FC = () => {
                 onClick={handleClick}
                 _hover={{ bg: 'purple.50' }}
               >
-                <Icon as={show ? FaEyeSlash : FaEye} />
+                <Icon as={show ? FaEyeSlash as any : FaEye as any} />
               </Button>
             </InputRightElement>
           </InputGroup>
@@ -200,7 +200,7 @@ const Login: React.FC = () => {
           size="lg"
           isLoading={loading}
           onClick={submitHandler}
-          leftIcon={<Icon as={FaSignInAlt} />}
+          leftIcon={<Icon as={FaSignInAlt as any} />}
           bgGradient="linear(to-r, purple.500, pink.500)"
           color="white"
           borderRadius="xl"
@@ -219,7 +219,7 @@ const Login: React.FC = () => {
           colorScheme="purple"
           w="100%"
           size="lg"
-          leftIcon={<Icon as={FaUserFriends} />}
+          leftIcon={<Icon as={FaUserFriends as any} />}
           borderRadius="xl"
           onClick={handleGuestLogin}
           isLoading={loading}

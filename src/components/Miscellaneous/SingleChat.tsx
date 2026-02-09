@@ -18,7 +18,8 @@ const SingleChat = ({ fetchAgain, setFetchAgain }: { fetchAgain: boolean; setFet
   const [newMessage, setNewMessage] = useState("");
   const [replyToMessage, setReplyToMessage] = useState<any>(null); 
   
-  const { selectedChat, setSelectedChat } = ChatState();
+  const { user, selectedChat, setSelectedChat } = ChatState();
+  const [adminUser, setAdminUser] = useState<any>(null);
   const toast = useToast();
 
   const fetchMessages = async () => {
@@ -64,6 +65,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }: { fetchAgain: boolean; setFet
 
   useEffect(() => {
     const adminInfo = JSON.parse(localStorage.getItem('adminInfo') || '{}');
+    setAdminUser(adminInfo);
     
     socket = io(ENDPOINT);
     socket.emit("setup", adminInfo);
@@ -80,7 +82,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }: { fetchAgain: boolean; setFet
   useEffect(() => {
     fetchMessages();
     selectedChatCompare = selectedChat;
-  }, [selectedChat, fetchMessages]);
+  }, [selectedChat]);
 
   return (
     <>

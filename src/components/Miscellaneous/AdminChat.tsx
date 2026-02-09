@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import {
   Box,
   Flex,
@@ -61,13 +62,13 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [socket, setSocket] = useState<any>(null);
-  const [creatingGroup, setCreatingGroup] = useState(false);
-  const [groupName, setGroupName] = useState('');
+  const [creatingGroup, setCreatingGroup] = useState<boolean>(false);
+  const [groupName, setGroupName] = useState<string>('');
   const [selectedUsersForGroup, setSelectedUsersForGroup] = useState<string[]>([]);
-  const [fetchAgain, setFetchAgain] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
+  const [fetchAgain, setFetchAgain] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<number>(0);
   const toast = useToast();
 
   const fetchUsers = async () => {
@@ -242,9 +243,9 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
   };
 
   const toggleUserSelection = (userId: string) => {
-    setSelectedUsersForGroup(prev => {
+    setSelectedUsersForGroup((prev: string[]) => {
       if (prev.includes(userId)) {
-        return prev.filter(id => id !== userId);
+        return prev.filter((id: string) => id !== userId);
       } else {
         return [...prev, userId];
       }
@@ -267,7 +268,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
     if (socket) {
       socket.on('message recieved', (newMessageRecieved: Message) => {
         if (selectedChat && selectedChat._id === newMessageRecieved.chat._id) {
-          setMessages(prev => [...prev, newMessageRecieved]);
+          setMessages((prev: Message[]) => [...prev, newMessageRecieved]);
         }
         fetchChats();
       });
@@ -324,11 +325,11 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
                     <Input
                       placeholder="Group Name"
                       value={groupName}
-                      onChange={(e) => setGroupName(e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setGroupName(e.target.value)}
                       mb={3}
                     />
                     <Text fontSize="sm" fontWeight="bold" mb={2}>Select Users:</Text>
-                    {users.filter(user => user._id !== JSON.parse(localStorage.getItem('adminInfo') || '{}')._id).map(user => (
+                    {users.filter((user: User) => user._id !== JSON.parse(localStorage.getItem('adminInfo') || '{}')._id).map((user: User) => (
                       <Card 
                         key={user._id} 
                         mb={2}
@@ -378,7 +379,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
                   </Box>
                 ) : (
                   users && users.length > 0 ? (
-                    users.map(user => {
+                    users.map((user: User) => {
                       if (!user || !user._id) return null;
                       
                       return (
@@ -414,7 +415,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
               <Box p={4} flex="1" overflowY="auto">
                 <Heading size="sm" mb={3}>Groups Created by Admin</Heading>
                 {adminGroups && adminGroups.length > 0 ? (
-                  adminGroups.map(chat => {
+                  adminGroups.map((chat: Chat) => {
                     if (!chat || !chat._id) return null;
                     
                     return (
@@ -463,7 +464,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
               <Box p={4} flex="1" overflowY="auto">
                 <Heading size="sm" mb={3}>Groups with Admin</Heading>
                 {groupsAdminIsIn && groupsAdminIsIn.length > 0 ? (
-                  groupsAdminIsIn.map(chat => {
+                  groupsAdminIsIn.map((chat: Chat) => {
                     if (!chat || !chat._id) return null;
                     
                     return (

@@ -1,21 +1,36 @@
-import React, { useState } from 'react';
-import { ChatState } from '../../Context/ChatProvider';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
+  Flex,
   Text,
   Avatar,
-  Flex,
-  Image,
-  Icon,
   IconButton,
+  FormControl,
+  FormLabel,
+  Input,
   Modal,
   ModalOverlay,
   ModalContent,
+  ModalHeader,
+  ModalFooter,
   ModalBody,
-  useDisclosure,
-  Spinner
+  ModalCloseButton,
+  Image,
+  useToast,
+  VStack,
+  HStack,
+  Icon,
+  Progress,
+  Tooltip,
+  Button,
+  InputGroup,
+  InputRightElement,
+  Spinner,
+  useDisclosure
 } from '@chakra-ui/react';
-import { FiDownload, FiImage, FiVideo, FiFile, FiX } from 'react-icons/fi';
+import { TriangleDownIcon, DownloadIcon, CloseIcon } from '@chakra-ui/icons';
+import { FiDownload, FiX, FiImage, FiVideo, FiFile } from 'react-icons/fi';
+import { ChatState } from '../../Context/ChatProvider';
 import './styles.css';
 
 interface Message {
@@ -186,7 +201,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                       >
                         <IconButton
                           aria-label="Download image"
-                          icon={<FiDownload size={16} />}
+                          icon={<DownloadIcon />}
                           size="xs"
                           color="white"
                           variant="ghost"
@@ -223,7 +238,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                       >
                         <IconButton
                           aria-label="Download video"
-                          icon={<FiDownload size={16} />}
+                          icon={<DownloadIcon />}
                           size="xs"
                           color="white"
                           variant="ghost"
@@ -251,7 +266,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                           p={2} 
                           borderRadius="full"
                         >
-                          <Icon as={getFileIcon(m.fileType)} color="blue.600" />
+                          <Icon as={getFileIcon(m.fileType) as any} color="blue.600" />
                         </Box>
                         <Box flex={1}>
                           <Text fontSize="sm" fontWeight="500" noOfLines={1}>
@@ -261,7 +276,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                             {m.fileType.split('/')[1] || 'File'}
                           </Text>
                         </Box>
-                        <Icon as={FiDownload} color="gray.500" />
+                        <DownloadIcon color="gray.500" />
                       </Flex>
                     </Box>
                   )}
@@ -301,7 +316,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                   top={4}
                   right={4}
                   aria-label="Close"
-                  icon={<FiX size={24} />}
+                  icon={<CloseIcon />}
                   size="lg"
                   color="white"
                   bg="blackAlpha.600"
@@ -313,7 +328,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                   bottom={4}
                   right={4}
                   aria-label="Download"
-                  icon={<FiDownload size={20} />}
+                  icon={<DownloadIcon />}
                   size="md"
                   color="white"
                   bg="blackAlpha.600"
@@ -340,7 +355,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                   top={4}
                   right={4}
                   aria-label="Close"
-                  icon={<FiX size={24} />}
+                  icon={<CloseIcon />}
                   size="lg"
                   color="white"
                   bg="blackAlpha.600"

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { ChatState, User, Chat, Message } from '../Context/ChatProvider'
-import { Box, FormControl, IconButton, Input, Spinner, Text, useToast, Flex, InputGroup, InputRightElement } from '@chakra-ui/react';
+import { Box, FormControl, IconButton, Input, Spinner, Text, useToast, Flex, Avatar, InputGroup, InputRightElement } from '@chakra-ui/react';
 import { ArrowBackIcon, CloseIcon, ViewIcon } from '@chakra-ui/icons';
 import { getSender, getSenderFull } from './../config/ChatLogics';
 import ProfileModal from './Miscellaneous/ProfileModal';
@@ -37,9 +37,9 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
   }
 
   const toast = useToast();
-  const { user, selectedChat, setSelectedChat, setNotification } = ChatState();
+  const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
 
-  const fetchMessages = React.useCallback(async () => {
+  const fetchMessages = async () => {
     if (!selectedChat) return;
     try {
       setLoading(true);
@@ -51,7 +51,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     } catch (error: any) {
       toast({ title: 'Error Occured!', description: 'Failed to load messages', status: 'error', duration: 5000, isClosable: true, position: 'bottom' });
     }
-  }, [selectedChat, user, toast])
+  }
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -64,22 +64,22 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
   useEffect(() => {
     fetchMessages();
     selectedChatCompare = selectedChat;
-  }, [selectedChat, fetchMessages]);
+  }, [selectedChat]);
 
-  const markMessagesAsRead = React.useCallback(async (chatId: string) => {
+  const markMessagesAsRead = async (chatId: string) => {
     try {
       const config = { headers: { Authorization: `Bearer ${(user as User).token}` } };
       await axios.put(`/api/chat/${chatId}/read`, {}, config);
     } catch (error) {
       console.log('Error marking messages as read:', error);
     }
-  }, [user])
+  };
 
   useEffect(() => {
     if (selectedChat && user) {
       markMessagesAsRead((selectedChat as Chat)._id);
     }
-  }, [selectedChat, user, markMessagesAsRead]);
+  }, [selectedChat, user]);
 
   useEffect(() => {
     const handleMessageReceived = (newMessageRecieved: Message) => {
@@ -116,7 +116,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     return () => {
       socket.off('message recieved', handleMessageReceived);
     };
-  }, [setNotification, setFetchAgain, setMessages, markMessagesAsRead]);
+  }, [socket, selectedChatCompare, setNotification, setFetchAgain, setMessages]);
 
   const sendMessage = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && newMessage) {

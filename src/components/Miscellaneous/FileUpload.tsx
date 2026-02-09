@@ -139,7 +139,7 @@ const FileUpload: React.FC<FileUploadProps> = ({
         <Box mt={2} p={3} bg="gray.50" borderRadius="md">
           <Flex align="center" justify="space-between">
             <Flex align="center" gap={2}>
-              <Icon as={getFileIcon(selectedFile)} color="teal.500" />
+              <Icon as={getFileIcon(selectedFile) as any} color="teal.500" />
               <Box>
                 <Text fontSize="sm" fontWeight="medium">{selectedFile.name}</Text>
                 <Text fontSize="xs" color="gray.500">

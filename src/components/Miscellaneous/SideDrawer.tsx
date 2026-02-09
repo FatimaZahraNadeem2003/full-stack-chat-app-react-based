@@ -36,8 +36,8 @@ import {
   Icon
 } from '@chakra-ui/react';
 
-import { ChevronDownIcon } from '@chakra-ui/icons';
-import { FiSearch, FiEdit3 } from "react-icons/fi";
+import { ChevronDownIcon, SearchIcon, EditIcon } from '@chakra-ui/icons';
+// import { FiSearch, FiEdit3 } from "react-icons/fi";
 import { ChatState } from './../../Context/ChatProvider';
 import { useHistory } from 'react-router-dom';
 import axios from 'axios';
@@ -251,7 +251,7 @@ const SideDrawer: React.FC = () => {
           <Button
             variant="ghost"
             onClick={onOpen}
-            leftIcon={<FiSearch size={18} />}
+            leftIcon={<SearchIcon />}
             _hover={{ bg: "gray.200", transform: "scale(1.05)" }}
           >
             Search
@@ -345,7 +345,7 @@ const SideDrawer: React.FC = () => {
             {isEditing ? 'Edit Profile' : 'My Profile'}
             {!isEditing && (
               <Button
-                leftIcon={<Icon as={FiEdit3} />}
+                leftIcon={<EditIcon />}
                 variant="ghost"
                 colorScheme="blue"
                 size="sm"
@@ -399,7 +399,7 @@ const SideDrawer: React.FC = () => {
                 <InputGroup>
                   <InputLeftElement
                     pointerEvents="none"
-                    children={<Icon as={FiEdit3} color="gray.300" />}
+                    children={<EditIcon color="gray.300" />}
                   />
                   <Input
                     value={updatedPic}

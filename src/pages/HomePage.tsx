@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
           transition="all 0.3s ease"
           _hover={{ transform: 'translateY(-15px)', boxShadow: '2xl' }}
         >
-          <Icon as={FaComments} w={10} h={10} color="purple.500" mr={3} />
+          <Icon as={FaComments as any} w={10} h={10} color="purple.500" mr={3} />
           <Text
             fontSize={{ base: '3xl', md: '4xl' }}
             fontFamily="Poppins"
@@ -75,7 +75,7 @@ const HomePage: React.FC = () => {
               _selected={{ bg: 'purple.500', color: 'white' }}
               _hover={{ bg: 'purple.300', color: 'white' }}
             >
-              <Icon as={FaSignInAlt} mr={2} />
+              <Icon as={FaSignInAlt as any} mr={2} />
               Login
             </Tab>
             <Tab
@@ -87,7 +87,7 @@ const HomePage: React.FC = () => {
               _selected={{ bg: 'purple.500', color: 'white' }}
               _hover={{ bg: 'purple.300', color: 'white' }}
             >
-              <Icon as={FaUserPlus} mr={2} />
+              <Icon as={FaUserPlus as any} mr={2} />
               Sign Up
             </Tab>
           </TabList>
