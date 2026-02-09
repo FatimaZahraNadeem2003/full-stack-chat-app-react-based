@@ -39,7 +39,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
   const toast = useToast();
   const { user, selectedChat, setSelectedChat, setNotification } = ChatState();
 
-  const fetchMessages = async () => {
+  const fetchMessages = React.useCallback(async () => {
     if (!selectedChat) return;
     try {
       setLoading(true);
@@ -51,7 +51,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     } catch (error: any) {
       toast({ title: 'Error Occured!', description: 'Failed to load messages', status: 'error', duration: 5000, isClosable: true, position: 'bottom' });
     }
-  }
+  }, [selectedChat, user, toast])
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -66,14 +66,14 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     selectedChatCompare = selectedChat;
   }, [selectedChat, fetchMessages]);
 
-  const markMessagesAsRead = async (chatId: string) => {
+  const markMessagesAsRead = React.useCallback(async (chatId: string) => {
     try {
       const config = { headers: { Authorization: `Bearer ${(user as User).token}` } };
       await axios.put(`/api/chat/${chatId}/read`, {}, config);
     } catch (error) {
       console.log('Error marking messages as read:', error);
     }
-  };
+  }, [user])
 
   useEffect(() => {
     if (selectedChat && user) {
@@ -116,7 +116,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     return () => {
       socket.off('message recieved', handleMessageReceived);
     };
-  }, [socket, selectedChatCompare, setNotification, setFetchAgain, setMessages, markMessagesAsRead]);
+  }, [setNotification, setFetchAgain, setMessages, markMessagesAsRead]);
 
   const sendMessage = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && newMessage) {
