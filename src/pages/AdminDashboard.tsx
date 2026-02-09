@@ -122,7 +122,7 @@ const AdminDashboard = () => {
     checkAdminAuth();
   }, [history]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = React.useCallback(async () => {
     try {
       const config = { headers: { Authorization: `Bearer ${JSON.parse(localStorage.getItem('adminInfo') || '{}').token}` } };
       const [usersRes, chatsRes] = await Promise.all([
@@ -140,7 +140,7 @@ const AdminDashboard = () => {
       }
       setLoading(false);
     }
-  };
+  }, [toastChakra, history]);
 
   useEffect(() => {
     if (!checkingAuth) {

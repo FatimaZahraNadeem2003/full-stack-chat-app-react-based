@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { ChatState, User, Chat, Message } from '../Context/ChatProvider'
-import { Box, FormControl, IconButton, Input, Spinner, Text, useToast, Flex, Avatar, InputGroup, InputRightElement } from '@chakra-ui/react';
+import { Box, FormControl, IconButton, Input, Spinner, Text, useToast, Flex, InputGroup, InputRightElement } from '@chakra-ui/react';
 import { ArrowBackIcon, CloseIcon, ViewIcon } from '@chakra-ui/icons';
 import { getSender, getSenderFull } from './../config/ChatLogics';
 import ProfileModal from './Miscellaneous/ProfileModal';
@@ -37,7 +37,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
   }
 
   const toast = useToast();
-  const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
+  const { user, selectedChat, setSelectedChat, setNotification } = ChatState();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -64,7 +64,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
   useEffect(() => {
     fetchMessages();
     selectedChatCompare = selectedChat;
-  }, [selectedChat]);
+  }, [selectedChat, fetchMessages]);
 
   const markMessagesAsRead = async (chatId: string) => {
     try {
@@ -79,7 +79,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     if (selectedChat && user) {
       markMessagesAsRead((selectedChat as Chat)._id);
     }
-  }, [selectedChat, user]);
+  }, [selectedChat, user, markMessagesAsRead]);
 
   useEffect(() => {
     const handleMessageReceived = (newMessageRecieved: Message) => {
@@ -116,7 +116,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     return () => {
       socket.off('message recieved', handleMessageReceived);
     };
-  }, [socket, selectedChatCompare, setNotification, setFetchAgain, setMessages]);
+  }, [socket, selectedChatCompare, setNotification, setFetchAgain, setMessages, markMessagesAsRead]);
 
   const sendMessage = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && newMessage) {
