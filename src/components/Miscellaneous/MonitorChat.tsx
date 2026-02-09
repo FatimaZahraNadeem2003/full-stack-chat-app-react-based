@@ -108,7 +108,7 @@ const MonitorChat: React.FC<MonitorChatProps> = ({
     if (selectedChat) {
       fetchMessages();
     }
-  }, [selectedChat]);
+  }, [selectedChat, fetchMessages]);
 
   const formatTime = (date: string) =>
     new Date(date).toLocaleTimeString([], {

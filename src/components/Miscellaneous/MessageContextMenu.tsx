@@ -9,7 +9,7 @@ import {
   Text
 } from '@chakra-ui/react';
 import { ChatState } from '../../Context/ChatProvider';
-import { HamburgerIcon, DeleteIcon, RepeatIcon } from '@chakra-ui/icons';
+import { HamburgerIcon, DeleteIcon } from '@chakra-ui/icons';
 import axios from 'axios';
 
 interface MessageContextMenuProps {
@@ -98,9 +98,7 @@ const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
     }
   };
 
-  const handleTagMessage = () => {
-    onReply(message);
-  };
+
 
   return (
     <Menu isOpen={isMenuOpen} onOpen={() => setIsMenuOpen(true)} onClose={() => setIsMenuOpen(false)}>

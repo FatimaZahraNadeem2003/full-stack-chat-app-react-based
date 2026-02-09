@@ -10,10 +10,6 @@ import {
   Button,
   useToast,
   Input,
-  InputGroup,
-  InputRightElement,
-  Skeleton,
-  SkeletonText,
   Divider,
   IconButton,
   Tooltip,
@@ -265,7 +261,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
     return () => {
       newSocket.close();
     };
-  }, []);
+  }, [fetchChats, fetchUsers]);
 
   useEffect(() => {
     if (socket) {
@@ -282,7 +278,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
         socket.off('message recieved');
       }
     };
-  }, [socket, selectedChat]);
+  }, [socket, selectedChat, fetchChats]);
 
   return (
     <Flex h="100vh" position="relative" p={0}>

@@ -7,15 +7,11 @@ import {
   Card,
   CardBody,
   Avatar,
-  Button,
   useToast,
   Skeleton,
-  SkeletonText,
   Divider,
   IconButton,
-  Tooltip,
-  VStack,
-  HStack 
+  VStack
 } from '@chakra-ui/react';
 import { CloseIcon, ChatIcon } from '@chakra-ui/icons';
 import axios from 'axios';
@@ -60,7 +56,6 @@ const UserChatViewer: React.FC<UserChatViewerProps> = ({ selectedUser, onClose }
   const [userChats, setUserChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [chatMessages, setChatMessages] = useState<Message[]>([]);
   const toast = useToast();
 
   const fetchUserChats = async () => {
@@ -88,33 +83,17 @@ const UserChatViewer: React.FC<UserChatViewerProps> = ({ selectedUser, onClose }
     }
   };
 
-  const fetchChatMessages = async (chatId: string) => {
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${JSON.parse(localStorage.getItem('adminInfo') || '{}').token}`
-        }
-      };
-      const { data } = await axios.get<Message[]>(`/api/admin/chat/${chatId}/messages`, config);
-      setChatMessages(data);
-    } catch (error: any) {
-      toast({ title: 'Error fetching messages', status: 'error' });
-    }
-  };
+
 
   useEffect(() => {
     if (selectedUser) fetchUserChats();
-  }, [selectedUser]);
+  }, [selectedUser, fetchUserChats]);
 
   const handleChatSelect = (chat: Chat) => {
     setSelectedChat(chat);
-    fetchChatMessages(chat._id);
   };
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+
 
   if (!selectedUser) return null;
 

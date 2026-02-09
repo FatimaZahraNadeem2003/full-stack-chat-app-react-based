@@ -9,7 +9,7 @@ interface ChangePasswordModalProps {
 }
 
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ user, children }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure()
+  const { isOpen, onClose } = useDisclosure()
   const toast = useToast()
   
   const [showOldPassword, setShowOldPassword] = useState(false)
@@ -71,7 +71,7 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ user, childre
         }
       }
 
-      const { data } = await axios.post(
+      await axios.post(
         "/api/user/change-password",
         { oldPassword, newPassword },
         config
