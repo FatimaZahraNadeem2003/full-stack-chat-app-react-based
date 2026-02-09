@@ -21,7 +21,6 @@ import {
   Tr,
   Th,
   Td,
-  Badge,
   Skeleton,
   SkeletonText,
   SimpleGrid,
@@ -29,17 +28,16 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
-  VStack,
   Input,
 } from '@chakra-ui/react';
-import { ChatIcon } from '@chakra-ui/icons';
+
 import axios from 'axios';
 import { useHistory } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { Toast } from 'react-hot-toast';
 import UserChatViewer from '../components/Miscellaneous/UserChatViewer';
 import AdminChat from '../components/Miscellaneous/AdminChat';
-import MonitorChat from '../components/Miscellaneous/MonitorChat';
+
 
 
 interface User { 
@@ -90,7 +88,7 @@ const AdminDashboard = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [messagesCount, setMessagesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
-  const [loadingStats, setLoadingStats] = useState(true);
+
   const [selectedUserForChat, setSelectedUserForChat] = useState<User | null>(null);
   const [showAdminChat, setShowAdminChat] = useState(false);
   const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -150,16 +148,14 @@ const AdminDashboard = () => {
         setLoading(true);
         await fetchDashboardData();
         
-        setLoadingStats(true);
         const msgCount = await fetchTotalMessagesCount();
         setMessagesCount(msgCount);
-        setLoadingStats(false);
         setLoading(false);
       };
       
       loadData();
     }
-  }, [checkingAuth]);
+  }, [checkingAuth, fetchDashboardData]);
 
   const fetchTotalMessagesCount = async (): Promise<number> => {
     try {
@@ -184,9 +180,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const getTotalMessagesCount = async () => {
-    return await fetchTotalMessagesCount();
-  };
+
 
   useEffect(() => {
     const adminInfo = JSON.parse(localStorage.getItem('adminInfo') || '{}');
@@ -199,22 +193,20 @@ const AdminDashboard = () => {
       setLoading(true);
       await fetchDashboardData();
       
-      setLoadingStats(true);
       const msgCount = await fetchTotalMessagesCount();
       setMessagesCount(msgCount);
-      setLoadingStats(false);
       setLoading(false);
     };
     
     loadData();
-  }, [history]);
+  }, [history, fetchDashboardData]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminInfo');
     history.push('/admin');
   };
 
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleString();
+
 
 
   const handleTerminateUser = (userId: string, userName: string) => {
