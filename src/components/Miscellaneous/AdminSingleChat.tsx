@@ -4,7 +4,7 @@ import { ArrowBackIcon, CloseIcon, ViewIcon } from '@chakra-ui/icons';
 import { getSender, getSenderFull, Message } from './../../config/ChatLogics';
 import ProfileModal from './ProfileModal';
 import UpdateGroupChatModal from './UpdateGroupChatModal';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 import ScrollableChat from '../ScrollableChat';
 import Lottie from 'react-lottie'
 import animationData from '../../animations/typing.json'

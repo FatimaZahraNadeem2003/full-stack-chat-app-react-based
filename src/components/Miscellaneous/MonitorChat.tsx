@@ -12,7 +12,7 @@ import {
   Badge,
   useToast,
 } from "@chakra-ui/react";
-import axios from "axios";
+import axios from '../../config/axiosConfig';
 
 
 interface User {

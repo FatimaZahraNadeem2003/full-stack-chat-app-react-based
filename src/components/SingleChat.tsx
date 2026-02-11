@@ -5,7 +5,7 @@ import { ArrowBackIcon, CloseIcon, ViewIcon } from '@chakra-ui/icons';
 import { getSender, getSenderFull } from './../config/ChatLogics';
 import ProfileModal from './Miscellaneous/ProfileModal';
 import UpdateGroupChatModal from './Miscellaneous/UpdateGroupChatModal';
-import axios from 'axios';
+import axios from '../config/axiosConfig';
 import ScrollableChat from './ScrollableChat';
 import io from 'socket.io-client'
 import Lottie from 'react-lottie'
@@ -16,7 +16,7 @@ interface SingleChatProps {
   setFetchAgain: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const ENDPOINT = 'http://localhost:5000';
+const ENDPOINT = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api/v1', '') || 'https://full-stack-chat-app-node-based.onrender.com';
 var socket: any, selectedChatCompare: any;
 
 const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) => {

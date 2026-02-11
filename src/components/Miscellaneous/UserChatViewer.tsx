@@ -18,7 +18,7 @@ import {
   HStack 
 } from '@chakra-ui/react';
 import { CloseIcon, ChatIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 import MonitorChat from './MonitorChat';
 
 interface User {

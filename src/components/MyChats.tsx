@@ -22,7 +22,7 @@ import {
   DeleteIcon,
   SmallCloseIcon
 } from '@chakra-ui/icons'
-import axios from 'axios'
+import axios from '../config/axiosConfig'
 import { ChatState } from '../Context/ChatProvider'
 import ChatLoading from './ChatLoading'
 import { getSender } from '../config/ChatLogics'

@@ -3,13 +3,13 @@ import {
   Box, Flex, Text, IconButton, Spinner, FormControl, Input, useToast, InputGroup, InputRightElement,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChatIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 import { ChatState } from '../../Context/ChatProvider';
 import ScrollableChat from './ScrollableChat';
 import ReplyMessage from '../Miscellaneous/ReplyMessage';
 import io from 'socket.io-client';
 
-const ENDPOINT = "http://localhost:5000"; 
+const ENDPOINT = process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api/v1', '') || 'https://full-stack-chat-app-node-based.onrender.com'; 
 let socket: any, selectedChatCompare: any;
 
 const SingleChat = ({ fetchAgain, setFetchAgain }: { fetchAgain: boolean; setFetchAgain: React.Dispatch<React.SetStateAction<boolean>> }) => {

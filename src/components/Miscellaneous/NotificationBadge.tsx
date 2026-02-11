@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Badge, Menu, MenuButton, MenuList, MenuItem, Button, Box, Text, Avatar, Flex, VStack, Portal, useToast } from '@chakra-ui/react';
 import { BellIcon } from '@chakra-ui/icons';
 import { ChatState } from '../../Context/ChatProvider';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 
 interface NotificationBadgeProps {
   children?: React.ReactNode;

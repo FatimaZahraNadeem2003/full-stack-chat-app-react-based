@@ -22,7 +22,7 @@ import {
   TabPanel
 } from '@chakra-ui/react';
 import { CloseIcon, ChatIcon, AddIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 import io from 'socket.io-client';
 import SingleChat from './SingleChat';
 
@@ -256,7 +256,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
     fetchUsers();
     fetchChats();
     
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api/v1', '') || 'https://full-stack-chat-app-node-based.onrender.com');
     setSocket(newSocket);
 
     return () => {

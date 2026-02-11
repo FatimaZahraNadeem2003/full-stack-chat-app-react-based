@@ -3,7 +3,7 @@ import { Box, Button, FormControl, IconButton, Input, Modal, ModalBody, ModalClo
 import React, { useState } from 'react'
 import { ChatState } from '../../Context/ChatProvider';
 import UserBadgeItem from '../UserAvatar/UserBadgeItem';
-import axios from 'axios'
+import axios from '../../config/axiosConfig'
 import UserListItem from './../UserAvatar/UserListItem';
 
 interface User {

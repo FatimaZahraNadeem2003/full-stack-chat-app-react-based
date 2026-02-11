@@ -1,7 +1,7 @@
 import { Button, FormControl, FormLabel, Input, InputGroup, InputRightElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, useDisclosure, useToast, VStack } from '@chakra-ui/react'
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons'
 import React, { useState } from 'react'
-import axios from 'axios'
+import axios from '../../config/axiosConfig'
 
 interface ChangePasswordModalProps {
   user: any;

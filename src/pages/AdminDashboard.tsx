@@ -33,7 +33,7 @@ import {
   Input,
 } from '@chakra-ui/react';
 import { ChatIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+import axios from '../config/axiosConfig';
 import { useHistory } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { Toast } from 'react-hot-toast';

@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { ChatState } from '../../Context/ChatProvider';
 import { HamburgerIcon, DeleteIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 
 interface MessageContextMenuProps {
   message: any;

@@ -13,7 +13,7 @@ import {
 } from '@chakra-ui/react'
 import React, { useState } from 'react'
 import { useToast } from '@chakra-ui/react'
-import axios from 'axios'
+import axios from '../../config/axiosConfig'
 import { useHistory } from 'react-router-dom'
 import { ChatState, User } from '../../Context/ChatProvider'
 import {

@@ -15,7 +15,7 @@ import {
   TabPanel,
   Text
 } from '@chakra-ui/react';
-import axios from 'axios';
+import axios from '../config/axiosConfig';
 import { useHistory } from 'react-router-dom';
 
 const AdminLogin = () => {

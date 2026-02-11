@@ -24,10 +24,8 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ViewIcon, CloseIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+import axios from '../../config/axiosConfig';
 import io from 'socket.io-client';
-
-axios.defaults.baseURL = 'http://localhost:5000';
 
 interface User {
   _id: string;
