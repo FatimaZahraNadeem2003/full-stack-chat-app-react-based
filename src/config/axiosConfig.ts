@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// Set the base URL for all API requests
 axios.defaults.baseURL = process.env.REACT_APP_BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'https://full-stack-chat-app-node-based.onrender.com';
 
 export default axios;

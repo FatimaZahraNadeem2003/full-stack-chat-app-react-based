@@ -37,7 +37,6 @@ import {
 } from '@chakra-ui/react';
 
 import { ChevronDownIcon, SearchIcon, EditIcon } from '@chakra-ui/icons';
-// import { FiSearch, FiEdit3 } from "react-icons/fi";
 import { ChatState } from './../../Context/ChatProvider';
 import { useHistory } from 'react-router-dom';
 import axios from '../../config/axiosConfig';

@@ -433,7 +433,6 @@ const AdminDashboard = () => {
                 </CardBody>
               </Card>
               <Box overflowX="auto">
-                {/* Table content will be here */}
               </Box>
             </TabPanel>
           </TabPanels>

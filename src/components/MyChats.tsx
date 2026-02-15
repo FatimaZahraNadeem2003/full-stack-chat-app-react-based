@@ -14,7 +14,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  Portal
+  Portal,
+  Badge 
 } from '@chakra-ui/react'
 import {
   AddIcon,
@@ -23,33 +24,12 @@ import {
   SmallCloseIcon
 } from '@chakra-ui/icons'
 import axios from '../config/axiosConfig'
-import { ChatState } from '../Context/ChatProvider'
+import { ChatState, User, Chat, Message } from '../Context/ChatProvider'
 import ChatLoading from './ChatLoading'
 import { getSender } from '../config/ChatLogics'
 import GroupChatModal from './Miscellaneous/GroupChatModal'
 
-
-interface User {
-  _id: string
-  name: string
-  email: string
-  pic: string
-  token?: string
-}
-
-interface Message {
-  _id: string
-  sender: User
-  content: string
-  isRead?: boolean
-}
-
-interface Chat {
-  _id: string
-  isGroupChat: boolean
-  chatName: string
-  users: User[]
-  latestMessage?: Message
+interface ExtendedChat extends Chat {
   isBlocked?: boolean
   blockedBy?: (string | { _id: string })[]
 }
@@ -58,22 +38,28 @@ interface MyChatsProps {
   fetchAgain: boolean
 }
 
-
 const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
   const [showChats, setShowChats] = useState(true)
 
-  const { user, selectedChat, setSelectedChat, chats, setChats } =
-    ChatState()
+  const { 
+    user, 
+    selectedChat, 
+    setSelectedChat, 
+    chats, 
+    setChats,
+    unreadCounts,        
+    fetchUnreadCounts,   
+    markChatAsRead       
+  } = ChatState()
 
   const toast = useToast()
-
 
   const fetchChats = async () => {
     try {
       const config = {
         headers: { Authorization: `Bearer ${user?.token}` }
       }
-      const { data } = await axios.get<Chat[]>('/api/chat', config)
+      const { data } = await axios.get<ExtendedChat[]>('/api/chat', config)
       const chatsWithBlockStatus = data.map(chat => ({
         ...chat,
         isBlocked: chat.blockedBy && chat.blockedBy.some(blockedUserId => {
@@ -84,7 +70,9 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
           }
         })
       }))
-      setChats(chatsWithBlockStatus)
+      setChats(chatsWithBlockStatus as any)
+      
+      fetchUnreadCounts()
     } catch {
       toast({
         title: 'Error',
@@ -100,6 +88,10 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
     fetchChats()
   }, [fetchAgain])
 
+  const handleChatSelect = (chat: Chat) => {
+    setSelectedChat(chat as any)
+    markChatAsRead(chat._id) 
+  }
 
   const handleDeleteChat = async (chatId: string) => {
     try {
@@ -111,7 +103,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
       const response = await axios.delete(`/api/chat/${chatId}`, config)
       console.log('Delete response:', response.data)
 
-      setChats(chats.filter((c: Chat) => c._id !== chatId))
+      setChats(chats.filter((c: Chat) => c._id !== chatId) as any)
 
       if (
         typeof selectedChat !== 'string' &&
@@ -150,7 +142,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
 
       setChats(chats.map((c: Chat) => 
         c._id === chatId ? { ...c, isBlocked: true } : c
-      ))
+      ) as any)
 
       toast({
         title: 'Chat blocked',
@@ -182,7 +174,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
 
       setChats(chats.map((c: Chat) => 
         c._id === chatId ? { ...c, isBlocked: false } : c
-      ))
+      ) as any)
 
       toast({
         title: 'Chat unblocked',
@@ -201,7 +193,6 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
       })
     }
   }
-
 
   return (
     <Box
@@ -236,13 +227,18 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
       <Divider />
 
       <Collapse in={showChats} style={{ flex: 1, overflow: 'hidden' }}>
-        <Box mt={3} overflowY="auto">
+        <Box mt={3} overflowY="auto" maxH="100%">
           {chats ? (
             <Stack spacing={2}>
               {chats.map((chat: Chat) => {
                 const isSelected =
                   typeof selectedChat !== 'string' &&
                   selectedChat?._id === chat._id
+
+                const unreadCount = unreadCounts[chat._id] || 0
+                const chatName = chat.isGroupChat 
+                  ? chat.chatName 
+                  : getSender(user, chat.users)
 
                 return (
                   <Flex
@@ -253,34 +249,59 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
                     bg={isSelected ? 'teal.500' : 'white'}
                     color={isSelected ? 'white' : 'gray.800'}
                     borderRadius="xl"
+                    position="relative"
+                    _hover={{ bg: isSelected ? 'teal.600' : 'gray.100' }}
+                    transition="all 0.2s"
                   >
                     <Flex
                       align="center"
                       gap={3}
                       flex="1"
                       cursor="pointer"
-                      onClick={() => setSelectedChat(chat)}
+                      onClick={() => handleChatSelect(chat)} 
                     >
                       <Avatar
                         size="sm"
-                        name={
-                          chat.isGroupChat
-                            ? chat.chatName
-                            : getSender(user, chat.users)
-                        }
+                        name={chatName}
+                        src={chat.isGroupChat ? '' : chat.users.find(u => u._id !== user?._id)?.pic}
                       />
 
-                      <Box>
+                      <Box flex="1" position="relative">
                         <Text fontWeight="600" noOfLines={1}>
-                          {chat.isGroupChat
-                            ? chat.chatName
-                            : getSender(user, chat.users)}
+                          {chatName}
                         </Text>
 
                         {chat.latestMessage && (
-                          <Text fontSize="xs" noOfLines={1}>
+                          <Text 
+                            fontSize="xs" 
+                            noOfLines={1} 
+                            color={isSelected ? 'whiteAlpha.800' : 'gray.600'}
+                            fontWeight={unreadCount > 0 && !isSelected ? 'bold' : 'normal'}
+                          >
+                            {chat.latestMessage.sender._id === user?._id 
+                              ? 'You: ' 
+                              : chat.latestMessage.sender.name + ': '}
                             {chat.latestMessage.content}
                           </Text>
+                        )}
+
+                        {unreadCount > 0 && !isSelected && (
+                          <Badge
+                            position="absolute"
+                            top="-8px"
+                            right="-8px"
+                            colorScheme="red"
+                            borderRadius="full"
+                            fontSize="0.6rem"
+                            minW="20px"
+                            h="20px"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            boxShadow="md"
+                          >
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </Badge>
                         )}
                       </Box>
                     </Flex>
@@ -299,20 +320,16 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
                             <MenuItem
                               icon={<DeleteIcon />}
                               color="red.500"
-                              onClick={() =>
-                                handleDeleteChat(chat._id)
-                              }
+                              onClick={() => handleDeleteChat(chat._id)}
                             >
                               Delete Chat
                             </MenuItem>
 
-                            {chat.isBlocked ? (
+                            {(chat as ExtendedChat).isBlocked ? (
                               <MenuItem
                                 icon={<SmallCloseIcon />}
                                 color="green.500"
-                                onClick={() =>
-                                  handleUnblockChat(chat._id)
-                                }
+                                onClick={() => handleUnblockChat(chat._id)}
                               >
                                 Unblock Chat
                               </MenuItem>
@@ -320,9 +337,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
                               <MenuItem
                                 icon={<SmallCloseIcon />}
                                 color="orange.500"
-                                onClick={() =>
-                                  handleBlockChat(chat._id)
-                                }
+                                onClick={() => handleBlockChat(chat._id)}
                               >
                                 Block Chat
                               </MenuItem>
