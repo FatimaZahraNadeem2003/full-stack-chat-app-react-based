@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { ChatState, User, Chat, Message } from '../Context/ChatProvider'
 import { Box, FormControl, IconButton, Input, Spinner, Text, useToast, Flex, Avatar, InputGroup, InputRightElement } from '@chakra-ui/react';
-import { ArrowBackIcon, CloseIcon, ViewIcon } from '@chakra-ui/icons';
-import { getSender, getSenderFull } from './../config/ChatLogics';
+import { ArrowBackIcon, AttachmentIcon, CloseIcon } from '@chakra-ui/icons'; 
+import { getSender, getSenderFull } from '../config/ChatLogics';
 import ProfileModal from './Miscellaneous/ProfileModal';
 import UpdateGroupChatModal from './Miscellaneous/UpdateGroupChatModal';
 import axios from '../config/axiosConfig';
@@ -10,6 +10,7 @@ import ScrollableChat from './ScrollableChat';
 import io from 'socket.io-client'
 import Lottie from 'react-lottie'
 import animationData from '../animations/typing.json'
+import EmojiPicker from './Miscellaneous/EmojiPicker';
 
 interface SingleChatProps {
   fetchAgain: boolean;
@@ -37,7 +38,15 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
   }
 
   const toast = useToast();
-  const { user, selectedChat, setSelectedChat, notification, setNotification } = ChatState();
+  const { 
+    user, 
+    selectedChat, 
+    setSelectedChat, 
+    notification, 
+    setNotification,
+    markChatAsRead,     
+    fetchUnreadCounts   
+  } = ChatState();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -47,9 +56,13 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
       const { data } = await axios.get<Message[]>(`/api/message/${(selectedChat as Chat)._id}`, config);
       setMessages(data);
       setLoading(false);
+      
+      markChatAsRead((selectedChat as Chat)._id);
+      
       socket.emit('join chat', (selectedChat as Chat)._id);
     } catch (error: any) {
       toast({ title: 'Error Occured!', description: 'Failed to load messages', status: 'error', duration: 5000, isClosable: true, position: 'bottom' });
+      setLoading(false);
     }
   }
 
@@ -59,6 +72,15 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     socket.on('connected', () => setSocketConnected(true));
     socket.on('typing', () => setIsTyping(true));
     socket.on('stop typing', () => setIsTyping(false));
+    
+    socket.on('messages read', ({ chatId, unreadCount }) => {
+      console.log('Messages read event:', chatId, unreadCount);
+      fetchUnreadCounts();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [])
 
   useEffect(() => {
@@ -66,24 +88,10 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     selectedChatCompare = selectedChat;
   }, [selectedChat]);
 
-  const markMessagesAsRead = async (chatId: string) => {
-    try {
-      const config = { headers: { Authorization: `Bearer ${(user as User).token}` } };
-      await axios.put(`/api/chat/${chatId}/read`, {}, config);
-    } catch (error) {
-      console.log('Error marking messages as read:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedChat && user) {
-      markMessagesAsRead((selectedChat as Chat)._id);
-    }
-  }, [selectedChat, user]);
-
   useEffect(() => {
     const handleMessageReceived = (newMessageRecieved: Message) => {
       console.log('New message received:', newMessageRecieved);
+      
       if (!selectedChatCompare || selectedChatCompare._id !== newMessageRecieved.chat._id) {
         let notificationText;
         if (newMessageRecieved.fileUrl) {
@@ -98,16 +106,18 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
           timestamp: new Date().toISOString(),
           isRead: false
         };
-        console.log('Adding notification:', enhancedNotification);
+        
         setNotification(prev => {
           const newNotifications = [enhancedNotification, ...prev];
-          console.log('Updated notifications:', newNotifications);
           return newNotifications;
         });
+        
+        fetchUnreadCounts();
+        
         setFetchAgain(prev => !prev);
       } else {
         setMessages(prev => [...prev, newMessageRecieved]);
-        markMessagesAsRead(newMessageRecieved.chat._id);
+        markChatAsRead(newMessageRecieved.chat._id);
       }
     };
 
@@ -116,7 +126,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     return () => {
       socket.off('message recieved', handleMessageReceived);
     };
-  }, [socket, selectedChatCompare, setNotification, setFetchAgain, setMessages]);
+  }, [socket, selectedChatCompare, setNotification, setFetchAgain, setMessages, markChatAsRead, fetchUnreadCounts]);
 
   const sendMessage = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && newMessage) {
@@ -275,6 +285,10 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
     }
   };
 
+  const handleEmojiSelect = (emoji: string) => {
+    setNewMessage(prev => prev + emoji);
+  };
+
   return (
     <>
       {selectedChat ? (
@@ -334,7 +348,10 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
             {loading ? (
               <Spinner size='xl' w={20} h={20} alignSelf='center' margin='auto' />
             ) : (
-              <ScrollableChat messages={messages as any} setMessages={setMessages as any} />
+              <ScrollableChat 
+                messages={messages}
+                setMessages={setMessages}
+              />
             )}
           </Box>
 
@@ -354,14 +371,16 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
                 mb={3} 
                 borderRadius="lg" 
                 boxShadow="sm"
-                position="relative"
-                top={-10}
               >
                 <Flex justifyContent="space-between" alignItems="flex-start" mb={1}>
-                   <Text fontSize="xs" fontWeight="bold" color="teal.700">Replying to {replyingTo.sender.name}</Text>
+                   <Text fontSize="xs" fontWeight="bold" color="teal.700">
+                     Replying to {replyingTo.sender.name}
+                   </Text>
                    <CloseIcon fontSize="12px" cursor="pointer" onClick={clearReply} color="gray.500" />
                 </Flex>
-                <Text fontSize="sm" color="gray.700" noOfLines={2}>{replyingTo.content}</Text>
+                <Text fontSize="sm" color="gray.700" noOfLines={2}>
+                  {replyingTo.content}
+                </Text>
               </Box>
             )}
 
@@ -376,7 +395,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
                   ) : (
                     <>
                       <Text fontSize="sm">
-                        <ViewIcon mr={2} /> {selectedFile.name}
+                        <AttachmentIcon mr={2} /> {selectedFile.name} 
                       </Text>
                       <IconButton 
                         size="xs" 
@@ -394,6 +413,10 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
             
             <FormControl onKeyDown={sendMessage} isRequired display='flex' alignItems='center'>
               <InputGroup>
+                <Box mr={2}>
+                  <EmojiPicker onEmojiSelect={handleEmojiSelect} />
+                </Box>
+                
                 <Input
                   variant='filled'
                   bg='gray.100'
@@ -403,10 +426,11 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
                   borderRadius='full'
                   _focus={{ bg: "white", borderColor: "teal.400" }}
                 />
+                
                 <InputRightElement width="4.5rem">
                   <IconButton
                     aria-label="Upload file"
-                    icon={<ViewIcon />}
+                    icon={<AttachmentIcon />} 
                     size="sm"
                     colorScheme="teal"
                     onClick={() => fileInputRef.current?.click()}

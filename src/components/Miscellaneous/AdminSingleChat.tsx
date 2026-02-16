@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Box, FormControl, IconButton, Input, Spinner, Text, useToast, Flex, Avatar, InputGroup, InputRightElement } from '@chakra-ui/react';
 import { ArrowBackIcon, CloseIcon, ViewIcon } from '@chakra-ui/icons';
-import { getSender, getSenderFull, Message } from './../../config/ChatLogics';
+import { getSender, getSenderFull, Message as MessageType, User as UserType } from './../../config/ChatLogics';
 import ProfileModal from './ProfileModal';
 import UpdateGroupChatModal from './UpdateGroupChatModal';
 import axios from '../../config/axiosConfig';
@@ -39,8 +39,8 @@ interface AdminSingleChatProps {
   setSelectedChat: (chat: any) => void; 
   adminInfo: Admin;
   socket: any;
-  messages: Message[]; 
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  messages: MessageType[]; 
+  setMessages: React.Dispatch<React.SetStateAction<MessageType[]>>;
 }
 
 const AdminSingleChat: React.FC<AdminSingleChatProps> = ({ 
@@ -58,7 +58,7 @@ const AdminSingleChat: React.FC<AdminSingleChatProps> = ({
   const [socketConnected, setSocketConnected] = useState(false);
   const [typing, setTyping] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [replyingTo, setReplyingTo] = useState<MessageType | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const defaultOptions = {
@@ -80,7 +80,7 @@ const AdminSingleChat: React.FC<AdminSingleChatProps> = ({
       }
       
       const config = { headers: { Authorization: `Bearer ${adminInfoLocal.token}` } };
-      const { data } = await axios.get<Message[]>(`/api/admin/message/${selectedChat._id}`, config);
+      const { data } = await axios.get<MessageType[]>(`/api/admin/message/${selectedChat._id}`, config);
       setMessages(data);
       setLoading(false);
       if (socket) {
@@ -107,7 +107,23 @@ const AdminSingleChat: React.FC<AdminSingleChatProps> = ({
         socket.emit('join chat', selectedChat._id);
       }
     }
-  }, [selectedChat, socket]);
+  }, [selectedChat]); 
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleMessageReceived = (newMessageRecieved: MessageType) => {
+      if (selectedChat && selectedChat._id === newMessageRecieved.chat._id) {
+        setMessages(prev => [...prev, newMessageRecieved]);
+      }
+    };
+
+    socket.on('message recieved', handleMessageReceived);
+
+    return () => {
+      socket.off('message recieved', handleMessageReceived);
+    };
+  }, [socket, selectedChat]);
 
   const sendMessage = async (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter' && newMessage) {
@@ -117,15 +133,15 @@ const AdminSingleChat: React.FC<AdminSingleChatProps> = ({
       try {
         const adminInfoLocal = JSON.parse(localStorage.getItem('adminInfo') || '{}');
         const config = { headers: { 'Content-type': 'application/json', Authorization: `Bearer ${adminInfoLocal.token}` } };
-        const messageData: any = { content: newMessage, chatId: selectedChat };
+        const messageData: any = { content: newMessage, chatId: selectedChat?._id };
         if (replyingTo) messageData.replyTo = replyingTo._id;
         
         setNewMessage('');
-        const { data } = await axios.post<Message>('/api/admin/message', messageData, config);
+        const { data } = await axios.post<MessageType>('/api/admin/message', messageData, config);
         if (socket) {
           socket.emit('new message', data);
         }
-        setMessages([...messages, data]);
+        setMessages(prev => [...prev, data]); 
         setReplyingTo(null); 
       } catch (error: any) {
         toast({ title: 'Error Occured!', description: 'Failed to send message', status: 'error', duration: 5000, position: 'bottom' });
@@ -175,9 +191,9 @@ const AdminSingleChat: React.FC<AdminSingleChatProps> = ({
       const fileUrl = await handleFileUpload(selectedFile);
       const adminInfoLocal = JSON.parse(localStorage.getItem('adminInfo') || '{}');
       const config = { headers: { 'Content-type': 'application/json', Authorization: `Bearer ${adminInfoLocal.token}` } };
-      const { data } = await axios.post<Message>('/api/message', { content: selectedFile.name, chatId: selectedChat._id, fileUrl, fileType: selectedFile.type }, config);
+      const { data } = await axios.post<MessageType>('/api/message', { content: selectedFile.name, chatId: selectedChat._id, fileUrl, fileType: selectedFile.type }, config);
       if (socket) socket.emit('new message', data);
-      setMessages([...messages, data]);
+      setMessages(prev => [...prev, data]); 
       setSelectedFile(null);
     } catch (error) {
       toast({ title: 'Error!', description: 'Failed to send file', status: 'error' });
@@ -195,14 +211,14 @@ const AdminSingleChat: React.FC<AdminSingleChatProps> = ({
 
             <Box flex="1" ml={2}>
               {selectedChat && !selectedChat.isGroupChat ? (
-                <Text fontWeight="bold">{getSender(adminInfo as User, selectedChat.users)}</Text>
+                <Text fontWeight="bold">{getSender(adminInfo as UserType, selectedChat.users)}</Text>
               ) : (
                 <Text fontWeight="bold">{selectedChat.chatName.toUpperCase()}</Text>
               )}
             </Box>
 
             {selectedChat && !selectedChat.isGroupChat ? (
-              <ProfileModal user={getSenderFull(adminInfo as User, selectedChat.users) as User} />
+              <ProfileModal user={getSenderFull(adminInfo as UserType, selectedChat.users) as UserType} />
             ) : (
               <UpdateGroupChatModal
                 fetchAgain={fetchAgain}

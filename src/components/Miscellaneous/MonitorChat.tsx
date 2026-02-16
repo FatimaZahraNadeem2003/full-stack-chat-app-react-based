@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   Box,
   Flex,
@@ -70,7 +70,7 @@ const MonitorChat: React.FC<MonitorChatProps> = ({
     };
   }, [onClose]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (!selectedChat) return;
 
     try {
@@ -92,7 +92,6 @@ const MonitorChat: React.FC<MonitorChatProps> = ({
       );
 
       setMessages(data);
-      setLoading(false);
     } catch (error) {
       toast({
         title: "Failed to load messages",
@@ -100,15 +99,16 @@ const MonitorChat: React.FC<MonitorChatProps> = ({
         duration: 4000,
         position: "bottom",
       });
+    } finally {
       setLoading(false);
     }
-  };
+  }, [selectedChat, toast]); 
 
   useEffect(() => {
     if (selectedChat) {
       fetchMessages();
     }
-  }, [selectedChat, fetchMessages]);
+  }, [selectedChat, fetchMessages]); 
 
   const formatTime = (date: string) =>
     new Date(date).toLocaleTimeString([], {

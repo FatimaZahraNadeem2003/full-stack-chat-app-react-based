@@ -16,6 +16,7 @@ export interface Chat {
   chatName: string;
   latestMessage?: Message;
   groupAdmin?: User;
+  unreadCount?: number; 
 }
 
 export interface Message {
@@ -45,6 +46,7 @@ interface ChatContextType {
   setUnreadCounts: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   fetchUnreadCounts: () => Promise<void>;
   markChatAsRead: (chatId: string) => Promise<void>;
+  updateChatUnreadCount: (chatId: string, count: number) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -73,6 +75,13 @@ const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
       });
       
       setUnreadCounts(countsMap);
+      
+      setChats(prevChats => 
+        prevChats.map(chat => ({
+          ...chat,
+          unreadCount: countsMap[chat._id] || 0
+        }))
+      );
     } catch (error) {
       console.error('Failed to fetch unread counts:', error);
     }
@@ -83,17 +92,51 @@ const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
     
     try {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
-      await axios.put(`/api/message/${chatId}/read`, {}, config);
+      const { data } = await axios.put(`/api/message/${chatId}/read`, {}, config);
       
-      setUnreadCounts(prev => ({
-        ...prev,
-        [chatId]: 0
-      }));
+      if (data.allUnreadCounts) {
+        setUnreadCounts(data.allUnreadCounts);
+        
+        setChats(prevChats => 
+          prevChats.map(chat => ({
+            ...chat,
+            unreadCount: data.allUnreadCounts[chat._id] || 0
+          }))
+        );
+      } else {
+        setUnreadCounts(prev => ({
+          ...prev,
+          [chatId]: 0
+        }));
+        
+        setChats(prevChats => 
+          prevChats.map(chat => 
+            chat._id === chatId 
+              ? { ...chat, unreadCount: 0 }
+              : chat
+          )
+        );
+      }
       
       setNotification(prev => prev.filter(n => n.chat?._id !== chatId));
     } catch (error) {
       console.error('Failed to mark chat as read:', error);
     }
+  };
+
+  const updateChatUnreadCount = (chatId: string, count: number) => {
+    setUnreadCounts(prev => ({
+      ...prev,
+      [chatId]: count
+    }));
+    
+    setChats(prevChats => 
+      prevChats.map(chat => 
+        chat._id === chatId 
+          ? { ...chat, unreadCount: count }
+          : chat
+      )
+    );
   };
 
   useEffect(() => {
@@ -130,7 +173,8 @@ const ChatProvider: React.FC<ChatProviderProps> = ({ children }) => {
         notification, setNotification,
         unreadCounts, setUnreadCounts,
         fetchUnreadCounts,
-        markChatAsRead
+        markChatAsRead,
+        updateChatUnreadCount
       }}
     >
       {children}

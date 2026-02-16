@@ -76,9 +76,11 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, setMessages }
           const isMe = m.sender._id === user?._id;
           const isFirstInGroup = i === 0 || !messages[i - 1]?.sender || messages[i - 1].sender._id !== m.sender._id;
 
+          const messageKey = `${m._id}-${i}`;
+
           return (
             <Box
-              key={m._id}
+              key={messageKey} 
               w="100%" 
               display="flex"
               justifyContent={isMe ? 'flex-end' : 'flex-start'}

@@ -11,6 +11,9 @@ export interface Chat {
   isGroupChat: boolean;
   users: User[];
   chatName: string;
+  latestMessage?: Message;
+  groupAdmin?: User;
+  unreadCount?: number;
 }
 
 export interface Message {
@@ -23,6 +26,7 @@ export interface Message {
   fileName?: string;
   fileType?: string;
   isUploading?: boolean;
+  readBy?: string[]; 
   createdAt?: string;
 }
 

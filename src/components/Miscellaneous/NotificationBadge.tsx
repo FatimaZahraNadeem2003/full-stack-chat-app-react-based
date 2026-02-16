@@ -9,7 +9,7 @@ interface NotificationBadgeProps {
 }
 
 const NotificationBadge: React.FC<NotificationBadgeProps> = ({ children }) => {
-  const { user, notification, setNotification, setSelectedChat } = ChatState();
+  const { user, notification, setNotification, setSelectedChat, markChatAsRead, updateChatUnreadCount } = ChatState();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
@@ -28,9 +28,15 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({ children }) => {
         },
       };
       
-      await axios.put('/api/message/clear-notifications', {}, config);
+      const { data } = await axios.put('/api/message/clear-notifications', {}, config);
       
       setNotification([]);
+      
+      if (data.unreadCounts) {
+        Object.keys(data.unreadCounts).forEach(chatId => {
+          updateChatUnreadCount(chatId, data.unreadCounts[chatId]);
+        });
+      }
       
       toast({
         title: 'Notifications cleared',
@@ -48,6 +54,15 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({ children }) => {
         isClosable: true,
       });
     }
+  };
+
+  const handleNotificationClick = async (notif: any) => {
+    setSelectedChat(notif.chat);
+    setIsOpen(false);
+    
+    await markChatAsRead(notif.chat._id);
+    
+    setNotification(prev => prev.filter(n => n._id !== notif._id));
   };
 
   useEffect(() => {
@@ -142,13 +157,8 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({ children }) => {
                     px={3} 
                     py={2} 
                     _hover={{ bg: 'gray.100' }}
-                    onClick={() => {
-                      setSelectedChat(notif.chat);
-                      setIsOpen(false);
-                      setNotification(prev => prev.map(n => 
-                        n._id === notif._id ? {...n, isRead: true} : n
-                      ));
-                    }}
+                    onClick={() => handleNotificationClick(notif)}
+                    bg={!notif.isRead ? 'blue.50' : 'transparent'}
                   >
                     <Flex align="center" gap={3}>
                       <Avatar 
@@ -161,7 +171,7 @@ const NotificationBadge: React.FC<NotificationBadgeProps> = ({ children }) => {
                           {notif.sender?.name}
                         </Text>
                         <Text fontSize="sm" color="gray.700" noOfLines={1}>
-                          {notif.content}
+                          {notif.notificationText || notif.content}
                         </Text>
                         <Text fontSize="xs" color="gray.500">
                           {notif.timestamp ? new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}

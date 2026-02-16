@@ -345,7 +345,7 @@ const SingleChat: React.FC<SingleChatProps> = ({ fetchAgain, setFetchAgain }) =>
             ) : (
               <ScrollableChat 
                 messages={messages as any}
-                onReply={(message: any) => setReplyingTo(message as Message)}
+                setMessages={setMessages as any}  
               />
             )}
           </Box>

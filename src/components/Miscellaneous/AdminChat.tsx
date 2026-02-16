@@ -25,6 +25,8 @@ import { CloseIcon, ChatIcon, AddIcon } from '@chakra-ui/icons';
 import axios from '../../config/axiosConfig';
 import io from 'socket.io-client';
 import SingleChat from './SingleChat';
+import AdminSingleChat from './AdminSingleChat'; 
+import { Message as MessageType, User as UserType } from './../../config/ChatLogics';
 
 interface User {
   _id: string;
@@ -33,21 +35,22 @@ interface User {
   pic: string;
 }
 
-interface Message {
-  _id: string;
-  sender: User;
-  content: string;
-  chat: Chat;
-  createdAt: string;
-}
-
 interface Chat {
   _id: string;
   chatName: string;
   isGroupChat: boolean;
   users: User[];
-  latestMessage?: Message;
+  latestMessage?: MessageType;
   groupAdmin?: User;
+}
+
+interface Admin {
+  _id: string;
+  name: string;
+  email: string;
+  pic?: string;
+  isAdmin: boolean;
+  token?: string;
 }
 
 interface AdminChatProps {
@@ -60,7 +63,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
   const [adminGroups, setAdminGroups] = useState<Chat[]>([]);
   const [groupsAdminIsIn, setGroupsAdminIsIn] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<MessageType[]>([]); 
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState<boolean>(true);
   const [socket, setSocket] = useState<any>(null);
@@ -69,6 +72,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
   const [selectedUsersForGroup, setSelectedUsersForGroup] = useState<string[]>([]);
   const [fetchAgain, setFetchAgain] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<number>(0);
+  const [adminInfo, setAdminInfo] = useState<any>(null); 
   const toast = useToast();
 
   const fetchUsers = async () => {
@@ -258,6 +262,13 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
     
     const newSocket = io(process.env.NEXT_PUBLIC_BACKEND_URL?.replace('/api/v1', '') || 'https://full-stack-chat-app-node-based.onrender.com');
     setSocket(newSocket);
+    
+    const adminData = JSON.parse(localStorage.getItem('adminInfo') || '{}');
+    const formattedAdminInfo = {
+      ...adminData,
+      isAdmin: true 
+    };
+    setAdminInfo(formattedAdminInfo);
 
     return () => {
       newSocket.close();
@@ -266,9 +277,9 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
 
   useEffect(() => {
     if (socket) {
-      socket.on('message recieved', (newMessageRecieved: Message) => {
+      socket.on('message recieved', (newMessageRecieved: MessageType) => {
         if (selectedChat && selectedChat._id === newMessageRecieved.chat._id) {
-          setMessages((prev: Message[]) => [...prev, newMessageRecieved]);
+          setMessages((prev: MessageType[]) => [...prev, newMessageRecieved]);
         }
         fetchChats();
       });
@@ -442,7 +453,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
                                 {chat.latestMessage.content}
                               </Text>
                               <Text fontSize="xs" color="gray.400" mt={1}>
-                                {formatDate(chat.latestMessage.createdAt)}
+                                {formatDate(chat.latestMessage.createdAt!)}
                               </Text>
                             </Box>
                           ) : (
@@ -491,7 +502,7 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
                                 {chat.latestMessage.content}
                               </Text>
                               <Text fontSize="xs" color="gray.400" mt={1}>
-                                {formatDate(chat.latestMessage.createdAt)}
+                                {formatDate(chat.latestMessage.createdAt!)}
                               </Text>
                             </Box>
                           ) : (
@@ -529,7 +540,16 @@ const AdminChat: React.FC<AdminChatProps> = ({ onClose }) => {
             overflow="hidden"
             m={4}
           >
-            <SingleChat fetchAgain={fetchAgain} setFetchAgain={setFetchAgain} />
+            <AdminSingleChat 
+              fetchAgain={fetchAgain} 
+              setFetchAgain={setFetchAgain}
+              selectedChat={selectedChat}
+              setSelectedChat={setSelectedChat}
+              adminInfo={adminInfo} 
+              socket={socket}
+              messages={messages}
+              setMessages={setMessages}
+            />
           </Box>
         ) : (
           <Flex align="center" justify="center" h="100%">

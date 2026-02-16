@@ -1,91 +1,38 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Flex,
   Text,
   Avatar,
   IconButton,
-  FormControl,
-  FormLabel,
-  Input,
+  Image,
   Modal,
   ModalOverlay,
   ModalContent,
-  ModalHeader,
-  ModalFooter,
   ModalBody,
-  ModalCloseButton,
-  Image,
-  useToast,
+  useDisclosure,
   VStack,
-  HStack,
-  Icon,
-  Progress,
   Tooltip,
-  Button,
-  InputGroup,
-  InputRightElement,
-  Spinner,
-  useDisclosure
+  Spinner
 } from '@chakra-ui/react';
-import { TriangleDownIcon, DownloadIcon, CloseIcon } from '@chakra-ui/icons';
-import { FiDownload, FiX, FiImage, FiVideo, FiFile } from 'react-icons/fi';
+import { DownloadIcon, CloseIcon } from '@chakra-ui/icons';
 import { ChatState } from '../../Context/ChatProvider';
+import ScrollableFeed from 'react-scrollable-feed';
+import { isSameUser, Message } from '../../config/ChatLogics';
+import MessageContextMenu from './MessageContextMenu';
+import ReplyMessage from './ReplyMessage';
 import './styles.css';
-
-interface Message {
-  _id: string;
-  sender: {
-    _id: string;
-    name: string;
-    pic: string;
-  };
-  content: string;
-  chat: any; 
-  fileUrl: string;
-  fileName: string;
-  fileType: string;
-  createdAt: string;
-  replyTo?: Message;
-  isUploading?: boolean;
-}
 
 interface ScrollableChatProps {
   messages: Message[];
-  onReply: (message: Message) => void; 
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
 }
 
-const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) => {
+const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, setMessages }) => {
   const { user } = ChatState();
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedMedia, setSelectedMedia] = useState<{url: string, type: string} | null>(null);
-
-  const isSameSender = (messages: Message[], m: Message, i: number, userId: string) => {
-    return (
-      i < messages.length - 1 &&
-      (messages[i + 1].sender._id !== m.sender._id ||
-        messages[i + 1].sender._id === undefined) &&
-      messages[i].sender._id !== userId
-    );
-  };
-
-  const isLastMessage = (messages: Message[], i: number, userId: string) => {
-    return (
-      i === messages.length - 1 &&
-      messages[messages.length - 1].sender._id !== userId &&
-      messages[messages.length - 1].sender._id
-    );
-  };
-
-  const isSameUser = (messages: Message[], m: Message, i: number) => {
-    return i > 0 && messages[i - 1].sender._id === m.sender._id;
-  };
-
-  const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith('image/')) return FiImage;
-    if (fileType.startsWith('video/')) return FiVideo;
-    return FiFile;
-  };
 
   const openMediaModal = (url: string, type: string) => {
     setSelectedMedia({ url, type });
@@ -101,196 +48,304 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
     document.body.removeChild(link);
   };
 
+  const handleReply = (message: Message) => {
+    setReplyingTo(message);
+  };
+
+  const clearReply = () => {
+    setReplyingTo(null);
+  };
+
+  const isMessageRead = (message: Message): boolean => {
+    if (!user || !message.readBy) return false;
+    return message.readBy.some(id => id.toString() === user._id.toString());
+  };
+
+  const getReadStatus = (message: Message): string => {
+    if (!message.readBy || message.readBy.length <= 1) return 'Sent';
+    if (message.readBy.length === 2) return 'Read';
+    return `Read by ${message.readBy.length - 1} others`;
+  };
+
   return (
     <Box 
-      className="scrollable-chat" 
-      p={3}
-      bgImage="url('/chat-bg.avif')"
-      bgSize="cover"
-      bgPosition="center"
-      bgRepeat="no-repeat"
-      minH="100%"
+      position="relative" 
+      w="100%" 
+      h="100%" 
+      overflowX="hidden" 
     >
-      {messages &&
-        messages.map((m, i) => (
-          <Box
-            key={m._id}
-            display="flex"
-            alignItems="center"
-            justifyContent={m.sender._id === user?._id ? 'flex-end' : 'flex-start'}
-            mb={isSameUser(messages, m, i) ? 1 : 3}
-            onDoubleClick={() => onReply(m)} 
-          >
-            {(isSameSender(messages, m, i, user?._id as string) ||
-              isLastMessage(messages, i, user?._id as string)) && (
-              <Avatar
-                mt="7px"
-                mr={1}
-                size="sm"
-                cursor="pointer"
-                name={m.sender.name}
-                src={m.sender.pic}
-              />
-            )}
+      {replyingTo && (
+        <ReplyMessage message={replyingTo} onClose={clearReply} />
+      )}
+      
+      <ScrollableFeed>
+        {messages && messages.map((m, i) => {
+          if (!m.sender) return null;
+          
+          const isMe = m.sender._id === user?._id;
+          const isFirstInGroup = i === 0 || !messages[i - 1]?.sender || messages[i - 1].sender._id !== m.sender._id;
+          const isRead = isMessageRead(m);
+
+          const messageKey = `${m._id}-${i}`;
+
+          return (
             <Box
-              bg={m.sender._id === user?._id ? '#BEE3F8' : '#FFF'}
-              ml={isSameUser(messages, m, i) ? '40px' : '0'}
-              px={3}
-              py={2}
-              borderRadius={m.sender._id === user?._id ? '20px 20px 5px 20px' : '20px 20px 20px 5px'}
-              maxW="75%"
-              boxShadow="sm"
+              key={messageKey}
+              w="100%" 
+              display="flex"
+              justifyContent={isMe ? 'flex-end' : 'flex-start'}
+              px={{ base: 2, md: 4 }} 
+              mb={isSameUser(messages, m, i) ? 1 : 3}
               position="relative"
+              className="message-container"
             >
-              {m.replyTo && (
-                <Box
-                  bg="rgba(0,0,0,0.06)"
-                  p={2}
-                  mb={2}
-                  borderRadius="md"
-                  borderLeft="4px solid"
-                  borderColor="teal.500"
-                  fontSize="xs"
-                >
-                  <Text fontWeight="bold" color="teal.700" noOfLines={1}>
-                    {m.replyTo.sender.name}
-                  </Text>
-                  <Text noOfLines={1} color="gray.600">
-                    {m.replyTo.content || (m.replyTo.fileUrl ? "Attachment" : "")}
-                  </Text>
+              {!isMe && (
+                <Box w="32px" mr={2} flexShrink={0}> 
+                  {isFirstInGroup ? (
+                    <Tooltip label={m.sender.name} placement='bottom-start' hasArrow>
+                      <Avatar
+                        size='xs'
+                        cursor='pointer'
+                        name={m.sender.name}
+                        src={m.sender.pic}
+                      />
+                    </Tooltip>
+                  ) : null}
                 </Box>
               )}
 
-              {m.isUploading ? (
-                <Box bg="gray.100" p={3} borderRadius="lg" mb={2}>
-                  <Flex align="center" gap={3}>
-                    <Spinner size="sm" />
-                    <Box>
-                      <Text fontSize="sm" fontWeight="500">Uploading {m.fileName || 'file'}...</Text>
-                      <Text fontSize="xs" color="gray.500">Please wait</Text>
+              <VStack align={isMe ? 'flex-end' : 'flex-start'} spacing={0} maxW="80%">
+                {!isMe && isFirstInGroup && (
+                  <Text 
+                    fontSize='xs' 
+                    fontWeight='bold' 
+                    color='teal.600' 
+                    ml={1} 
+                    mb={1}
+                  >
+                    {m.sender.name}
+                  </Text>
+                )}
+
+                <Box
+                  bg={isMe ? '#dcf8c6' : 'white'} 
+                  color='gray.800'
+                  borderRadius={isMe 
+                      ? '10px 0px 10px 10px' 
+                      : '0px 10px 10px 10px' 
+                  }
+                  p='6px 12px'
+                  boxShadow='sm'
+                  wordBreak='break-word' 
+                  position="relative"
+                  w="fit-content" 
+                  border={m.replyTo ? "1px solid" : "none"}
+                  borderColor={m.replyTo ? "blue.100" : "transparent"}
+                >
+                  <Flex alignItems="flex-start" gap={2}>
+                    <VStack align="stretch" spacing={1} flex={1}>
+                      {m.replyTo && (
+                        <Text fontSize="10px" color="blue.500" fontWeight="500" mb={1}>
+                          ↳ This is a reply
+                        </Text>
+                      )}
+                      {m.replyTo && m.replyTo.sender && (
+                        <Box
+                          bg="blue.50" 
+                          borderLeft="4px solid"
+                          borderColor="blue.500"
+                          borderRadius="md"
+                          p={2}
+                          mb={2}
+                          maxW="100%"
+                          boxShadow="sm"
+                        >
+                          <Flex alignItems="center" mb={1}>
+                            <Text fontSize="10px" fontWeight="700" color="blue.700" mr={2}>
+                              ↳ Replying to {m.replyTo.sender.name}:
+                            </Text>
+                          </Flex>
+                          <Text fontSize="xs" color="gray.700" noOfLines={2} fontStyle="italic">
+                            "{m.replyTo.content}"
+                          </Text>
+                        </Box>
+                      )}
+                      
+                      {m.isUploading ? (
+                        <Box bg="gray.100" p={3} borderRadius="lg" mb={2}>
+                          <Flex align="center" gap={3}>
+                            <Spinner size="sm" />
+                            <Box>
+                              <Text fontSize="sm" fontWeight="500">Uploading {m.fileName || 'file'}...</Text>
+                              <Text fontSize="xs" color="gray.500">Please wait</Text>
+                            </Box>
+                          </Flex>
+                        </Box>
+                      ) : m.fileUrl ? (
+                        <Box>
+                          {m.fileType?.startsWith('image/') ? (
+                            <Box 
+                              position="relative" 
+                              borderRadius="lg" 
+                              overflow="hidden"
+                              cursor="pointer"
+                              onClick={() => openMediaModal(m.fileUrl!, 'image')}
+                              _hover={{ opacity: 0.9 }}
+                              transition="opacity 0.2s"
+                              mb={2}
+                            >
+                              <Image 
+                                src={m.fileUrl} 
+                                borderRadius="lg" 
+                                maxH="300px" 
+                                objectFit="cover" 
+                                w="100%"
+                                fallbackSrc="https://via.placeholder.com/300x200?text=Loading+Image..."
+                              />
+                              <Flex 
+                                position="absolute" 
+                                top={2} 
+                                right={2} 
+                                bg="blackAlpha.600" 
+                                borderRadius="full" 
+                                p={1}
+                              >
+                                <IconButton
+                                  aria-label="Download image"
+                                  icon={<DownloadIcon fontSize="xs" />}
+                                  size="xs"
+                                  color="white"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadMedia(m.fileUrl!, m.fileName || 'image.jpg');
+                                  }}
+                                />
+                              </Flex>
+                            </Box>
+                          ) : m.fileType?.startsWith('video/') ? (
+                            <Box 
+                              position="relative" 
+                              borderRadius="lg" 
+                              overflow="hidden"
+                              bg="black"
+                              mb={2}
+                            >
+                              <video 
+                                src={m.fileUrl} 
+                                controls 
+                                style={{ 
+                                  width: '100%', 
+                                  maxHeight: '300px',
+                                  borderRadius: '8px'
+                                }}
+                              />
+                              <Flex 
+                                position="absolute" 
+                                top={2} 
+                                right={2} 
+                                bg="blackAlpha.600" 
+                                borderRadius="full" 
+                                p={1}
+                              >
+                                <IconButton
+                                  aria-label="Download video"
+                                  icon={<DownloadIcon fontSize="xs" />}
+                                  size="xs"
+                                  color="white"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    downloadMedia(m.fileUrl!, m.fileName || 'video.mp4');
+                                  }}
+                                />
+                              </Flex>
+                            </Box>
+                          ) : (
+                            <Box 
+                              bg="gray.50" 
+                              p={3} 
+                              borderRadius="lg" 
+                              border="1px solid" 
+                              borderColor="gray.200"
+                              _hover={{ bg: 'gray.100' }}
+                              cursor="pointer"
+                              onClick={() => downloadMedia(m.fileUrl!, m.fileName || 'file')}
+                              mb={2}
+                            >
+                              <Flex align="center" gap={3}>
+                                <Box 
+                                  bg="blue.100" 
+                                  p={2} 
+                                  borderRadius="full"
+                                >
+                                  <DownloadIcon color="blue.600" />
+                                </Box>
+                                <Box flex={1}>
+                                  <Text fontSize="sm" fontWeight="500" noOfLines={1}>
+                                    {m.fileName}
+                                  </Text>
+                                  <Text fontSize="xs" color="gray.500">
+                                    {m.fileType?.split('/')[1] || 'File'}
+                                  </Text>
+                                </Box>
+                                <DownloadIcon color="gray.500" />
+                              </Flex>
+                            </Box>
+                          )}
+                          {m.content && (
+                            <Text fontSize="14px" color="gray.700">
+                              {m.content}
+                            </Text>
+                          )}
+                        </Box>
+                      ) : (
+                        <>
+                          <Text fontSize="14px" lineHeight="short">
+                            {m.content}
+                          </Text>
+                        </>
+                      )}
+                      
+                      <Flex justifyContent="flex-end" alignItems="center" mt={1}>
+                        <Text 
+                          fontSize="9px" 
+                          color="gray.500" 
+                          userSelect="none"
+                          mr={1}
+                        >
+                          {m.createdAt ? formatDate(m.createdAt) : 'Just now'}
+                        </Text>
+                        
+                        {isMe && !m.isUploading && (
+                          <Tooltip label={getReadStatus(m)} placement="top" hasArrow>
+                            <Text 
+                              fontSize="10px" 
+                              color={isRead ? "blue.500" : "gray.400"}
+                              fontWeight="bold"
+                            >
+                              {isRead ? '✓✓' : '✓'}
+                            </Text>
+                          </Tooltip>
+                        )}
+                      </Flex>
+                    </VStack>
+                    
+                    <Box ml={1}>
+                        <MessageContextMenu 
+                          message={m} 
+                          messages={messages} 
+                          setMessages={setMessages}
+                          onReply={handleReply}
+                        />
                     </Box>
                   </Flex>
                 </Box>
-              ) : m.fileUrl && (
-                <Box mb={m.content ? 2 : 0}>
-                  {m.fileType.startsWith('image/') ? (
-                    <Box 
-                      position="relative" 
-                      borderRadius="lg" 
-                      overflow="hidden"
-                      cursor="pointer"
-                      onClick={() => openMediaModal(m.fileUrl, 'image')}
-                      _hover={{ opacity: 0.9 }}
-                      transition="opacity 0.2s"
-                    >
-                      <Image 
-                        src={m.fileUrl} 
-                        borderRadius="lg" 
-                        maxH="300px" 
-                        objectFit="cover" 
-                        w="100%"
-                        fallbackSrc="https://via.placeholder.com/300x200?text=Loading+Image..."
-                      />
-                      <Flex 
-                        position="absolute" 
-                        top={2} 
-                        right={2} 
-                        bg="blackAlpha.600" 
-                        borderRadius="full" 
-                        p={1}
-                      >
-                        <IconButton
-                          aria-label="Download image"
-                          icon={<DownloadIcon />}
-                          size="xs"
-                          color="white"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            downloadMedia(m.fileUrl, m.fileName || 'image.jpg');
-                          }}
-                        />
-                      </Flex>
-                    </Box>
-                  ) : m.fileType.startsWith('video/') ? (
-                    <Box 
-                      position="relative" 
-                      borderRadius="lg" 
-                      overflow="hidden"
-                      bg="black"
-                    >
-                      <video 
-                        src={m.fileUrl} 
-                        controls 
-                        style={{ 
-                          width: '100%', 
-                          maxHeight: '300px',
-                          borderRadius: '8px'
-                        }}
-                      />
-                      <Flex 
-                        position="absolute" 
-                        top={2} 
-                        right={2} 
-                        bg="blackAlpha.600" 
-                        borderRadius="full" 
-                        p={1}
-                      >
-                        <IconButton
-                          aria-label="Download video"
-                          icon={<DownloadIcon />}
-                          size="xs"
-                          color="white"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            downloadMedia(m.fileUrl, m.fileName || 'video.mp4');
-                          }}
-                        />
-                      </Flex>
-                    </Box>
-                  ) : (
-                    <Box 
-                      bg="gray.50" 
-                      p={3} 
-                      borderRadius="lg" 
-                      border="1px solid" 
-                      borderColor="gray.200"
-                      _hover={{ bg: 'gray.100' }}
-                      cursor="pointer"
-                      onClick={() => downloadMedia(m.fileUrl, m.fileName || 'file')}
-                    >
-                      <Flex align="center" gap={3}>
-                        <Box 
-                          bg="blue.100" 
-                          p={2} 
-                          borderRadius="full"
-                        >
-                          <Icon as={getFileIcon(m.fileType) as any} color="blue.600" />
-                        </Box>
-                        <Box flex={1}>
-                          <Text fontSize="sm" fontWeight="500" noOfLines={1}>
-                            {m.fileName}
-                          </Text>
-                          <Text fontSize="xs" color="gray.500">
-                            {m.fileType.split('/')[1] || 'File'}
-                          </Text>
-                        </Box>
-                        <DownloadIcon color="gray.500" />
-                      </Flex>
-                    </Box>
-                  )}
-                </Box>
-              )}
-              
-              {m.content && <Text fontSize="sm">{m.content}</Text>}
-              
-              <Text fontSize="9px" color="gray.500" textAlign="right" mt={1}>
-                {formatDate(m.createdAt)}
-              </Text>
+              </VStack>
             </Box>
-          </Box>
-        ))}
+          );
+        }).filter(Boolean)} 
+      </ScrollableFeed>
       
       <Modal isOpen={isOpen} onClose={onClose} size="full" isCentered>
         <ModalOverlay bg="blackAlpha.900" />
@@ -316,7 +371,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                   top={4}
                   right={4}
                   aria-label="Close"
-                  icon={<CloseIcon />}
+                  icon={<CloseIcon fontSize="lg" />}
                   size="lg"
                   color="white"
                   bg="blackAlpha.600"
@@ -328,7 +383,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                   bottom={4}
                   right={4}
                   aria-label="Download"
-                  icon={<DownloadIcon />}
+                  icon={<DownloadIcon fontSize="md" />}
                   size="md"
                   color="white"
                   bg="blackAlpha.600"
@@ -355,7 +410,7 @@ const ScrollableChat: React.FC<ScrollableChatProps> = ({ messages, onReply }) =>
                   top={4}
                   right={4}
                   aria-label="Close"
-                  icon={<CloseIcon />}
+                  icon={<CloseIcon fontSize="lg" />}
                   size="lg"
                   color="white"
                   bg="blackAlpha.600"

@@ -60,6 +60,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
         headers: { Authorization: `Bearer ${user?.token}` }
       }
       const { data } = await axios.get<ExtendedChat[]>('/api/chat', config)
+      
       const chatsWithBlockStatus = data.map(chat => ({
         ...chat,
         isBlocked: chat.blockedBy && chat.blockedBy.some(blockedUserId => {
@@ -70,6 +71,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
           }
         })
       }))
+      
       setChats(chatsWithBlockStatus as any)
       
       fetchUnreadCounts()
@@ -85,8 +87,10 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
   }
 
   useEffect(() => {
-    fetchChats()
-  }, [fetchAgain])
+    if (user) {
+      fetchChats()
+    }
+  }, [fetchAgain, user])
 
   const handleChatSelect = (chat: Chat) => {
     setSelectedChat(chat as any)
@@ -235,7 +239,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
                   typeof selectedChat !== 'string' &&
                   selectedChat?._id === chat._id
 
-                const unreadCount = unreadCounts[chat._id] || 0
+                const unreadCount = chat.unreadCount || unreadCounts[chat._id] || 0
                 const chatName = chat.isGroupChat 
                   ? chat.chatName 
                   : getSender(user, chat.users)
@@ -252,6 +256,8 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
                     position="relative"
                     _hover={{ bg: isSelected ? 'teal.600' : 'gray.100' }}
                     transition="all 0.2s"
+                    borderLeft={unreadCount > 0 && !isSelected ? '4px solid' : 'none'}
+                    borderLeftColor="blue.400"
                   >
                     <Flex
                       align="center"
@@ -267,7 +273,7 @@ const MyChats: React.FC<MyChatsProps> = ({ fetchAgain }) => {
                       />
 
                       <Box flex="1" position="relative">
-                        <Text fontWeight="600" noOfLines={1}>
+                        <Text fontWeight={unreadCount > 0 && !isSelected ? 'bold' : '600'} noOfLines={1}>
                           {chatName}
                         </Text>
 
